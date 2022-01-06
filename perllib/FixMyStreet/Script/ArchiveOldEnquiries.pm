@@ -34,6 +34,7 @@ sub update_options {
             %$opts,
             %$params,
         };
+        $opts->{show_emails} && ( $opts->{commit} = 0 );
     }
 }
 
@@ -44,6 +45,12 @@ sub archive {
     unless ( $opts->{commit} ) {
         printf "Doing a dry run; emails won't be sent and reports won't be closed.\n";
         printf "Re-run with --commit to actually archive reports.\n\n";
+    }
+
+    if ($opts->{show_emails}) {
+        if ($opts->{reports} || $opts->{commit}) {
+            die "Aborting: the show_emails flag was specified. Run without --show_emails to close reports.\n";
+        }
     }
 
     if ( $opts->{reports} ) {
@@ -73,6 +80,7 @@ sub close_list {
     die "Found more reports than expected\n" if $no_message->count + $with_message->count > $max_reports;
 
     $opts->{retain_alerts} = 1;
+
     printf("Closing %d reports, with alerts: ", $with_message->count);
     close_problems($with_message);
     printf "done\n";
@@ -103,9 +111,11 @@ sub get_closure_message {
         return $message;
     } else {
         my $cobrand;
+        warn 'pre-stuff';
         eval {
             $cobrand = FixMyStreet::Cobrand->get_class_for_moniker($opts->{cobrand})->new()->council_area;
         };
+        warn 'post-stuff';
         if ($@) {
             $cobrand = 'your council area';
         }
@@ -186,6 +196,9 @@ sub send_email_and_close {
 
     # Send email
     printf("    Sending email about %d reports: ", scalar(@problems));
+
+    my $output_email_as_string = $opts->{show_emails} ? 1 : 0;
+
     my $email_error = FixMyStreet::Email::send_cron(
         $problems->result_source->schema,
         'archive-old-enquiries.txt',
@@ -194,7 +207,7 @@ sub send_email_and_close {
             To => [ [ $user->email, $user->name ] ],
         },
         undef,
-        undef,
+        $output_email_as_string,
         $cobrand,
         $problems[0]->lang,
     );
@@ -203,6 +216,8 @@ sub send_email_and_close {
         printf("done.\n    Closing reports: ");
         close_problems($problems);
         printf("done.\n");
+    } elsif ( $opts->{show_emails} ) {
+        printf("Dry run. Not closing reports for this user.\n")
     } else {
         printf("error! Not closing reports for this user.\n")
     }
@@ -210,6 +225,7 @@ sub send_email_and_close {
 
 sub close_problems {
     return unless $opts->{commit};
+    return if $opts->{show_emails};
 
     my $problems = shift;
 
