@@ -908,6 +908,7 @@ sub waste_munge_request_data {
     $data->{title} = "Request new $container";
     $data->{detail} = "Quantity: $quantity\n\n$address";
     $data->{detail} .= "\n\nReason: $reason" if $reason;
+    $data->{detail} .= "\n\nPlease remove cracked bin." if $reason && $reason eq "Cracked bin";
 
     if ( $data->{extra_detail} ) {
         $data->{detail} .= "\n\nExtra detail: " . $data->{extra_detail};
