@@ -903,6 +903,7 @@ sub waste_munge_request_data {
         cracked => 'Cracked bin',
         lost_stolen => 'Lost/stolen bin',
         new_build => 'New build',
+        other_staff => '(Other - PD STAFF)',
     }->{$reason} || $reason;
 
     $data->{title} = "Request new $container";
@@ -1136,17 +1137,22 @@ sub waste_munge_request_form_fields {
     my ($self, $field_list) = @_;
 
     unless ($self->{c}->get_param('bags_only')) {
+        my $reasons = [
+            { label => 'Additional black/green due to a large family', value => 'large_family' },
+            { label => 'Cracked bin', value => 'cracked' },
+            { label => 'Lost/stolen bin', value => 'lost_stolen' },
+            { label => 'New build', value => 'new_build' },
+        ];
+        if ( $self->{c}->user && $self->{c}->user->from_body
+             && $self->{c}->user->from_body->name eq $self->council_name ) {
+                push @$reasons, { label => '(Other - PD STAFF)', value => 'other_staff' };
+        }
         push @$field_list, "request_reason" => {
             type => 'Select',
             widget => 'RadioGroup',
             required => 1,
             label => 'Why do you need new bins?',
-            options => [
-                { label => 'Additional black/green due to a large family', value => 'large_family' },
-                { label => 'Cracked bin', value => 'cracked' },
-                { label => 'Lost/stolen bin', value => 'lost_stolen' },
-                { label => 'New build', value => 'new_build' },
-            ],
+            options => $reasons,
         };
         push @$field_list, "extra_detail" => {
             type => 'Text',
