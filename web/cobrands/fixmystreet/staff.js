@@ -102,13 +102,17 @@ fixmystreet.staff_set_up = {
         var $phoneInput = $('input[name=phone]');
         var $showNameCheckbox = $('input[name=may_show_name]');
         var $addAlertCheckbox = $('#form_add_alert');
+        var $extraTitle = $('select#form_fms_extra_title');
         if (val === 'myself') {
             $emailInput.val($emailInput.prop('defaultValue')).prop('disabled', true);
             $emailOptionalLabel.addClass('hidden');
-            $nameInput.val($nameInput.prop('defaultValue')).prop('disabled', false);
-            $phoneInput.val($phoneInput.prop('defaultValue')).prop('disabled', false);
+            $nameInput.val($nameInput.prop('defaultValue')).prop('readonly', true);
+            $phoneInput.val($phoneInput.prop('defaultValue')).prop('disabled', true);
             $showNameCheckbox.prop('checked', false).prop('disabled', false);
             $addAlertCheckbox.prop('checked', true).prop('disabled', false);
+            if ($extraTitle) {
+               $extraTitle.prop('disabled', true);
+            }
         } else if (val === 'another_user') {
             $emailInput.val('').prop('disabled', false);
             if (!$phoneInput.length) {

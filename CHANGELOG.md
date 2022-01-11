@@ -5,6 +5,7 @@
         - Highlight pin on sidebar focus as well as hover.
         - Map page pagination links now styled as links rather than buttons. #3727
         - Include username in inactive email.
+        - Disabled staff phone and name fields to avoid accidental overwriting of their own details when entering reports on behalf of another user.
     - Bugfixes:
         - Add ID attributes to change password form inputs.
         - Fix link deactivation for privacy policy link on privacy policy page. #3704

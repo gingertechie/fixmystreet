@@ -24,6 +24,8 @@ use FixMyStreet::PhotoStorage;
 use FixMyStreet::DB::Factories;
 use Getopt::Long::Descriptive;
 
+our $bodies;
+
 my ($opt, $usage) = describe_options(
     '%c %o',
     [ 'area-id=i', "MapIt area ID to create body for", { required => 1 } ],
@@ -99,7 +101,6 @@ for my $cat ('Dropped Kerbs', 'Skips') {
 }
 
 if ($opt->test_fixtures) {
-    my $bodies;
 
     my $params = {
         name => 'National Highways',
@@ -444,6 +445,8 @@ foreach (
     ] },
     { name => 'Wizard of Oz', email_verified => 1, email => 'admin@example.org', is_superuser => 't' },
     { name => "Norma User", email_verified => 1, email => 'user@example.org' },
+    # Body-specific Users
+    { name => 'Peter Burra', email_verified => 1, email => 'cs@peterborough.example.org', body => $bodies->{2566}, permissions => $perms_cs },
 ) {
     $users{$_->{email}} = FixMyStreet::DB::Factory::User->find_or_create($_);
     my $perms = $_->{permissions} ? " (" . join(', ', @{$_->{permissions} || []}) . ")" : "";
