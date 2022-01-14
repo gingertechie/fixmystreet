@@ -605,7 +605,7 @@ sub bin_services_for_address {
 
     my %container_request_max = (
         6533 => 1, # 240L Black
-        6534 => 1, # 240L Green (max 2 per household, need to check how many property already has dynamically)
+        6534 => 1, # 240L Green
         6579 => 1, # 240L Brown
         6836 => undef, # Refuse 1100l
         6837 => undef, # Refuse 660l
