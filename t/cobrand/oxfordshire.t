@@ -5,6 +5,7 @@ use FixMyStreet::TestMech;
 use FixMyStreet::Script::Alerts;
 use FixMyStreet::Script::Reports;
 use Open311;
+use HTML::TreeBuilder;
 my $mech = FixMyStreet::TestMech->new;
 
 my $oxon = $mech->create_body_ok(2237, 'Oxfordshire County Council');
@@ -369,6 +370,50 @@ FixMyStreet::override_config {
         is $cgi->param('attribute[raise_defect]'), 1, 'Defect flag sent with update';
     };
 
+};
+
+subtest "sends FMS report ID in confirmation emails" => sub {
+    FixMyStreet::override_config {
+        ALLOWED_COBRANDS => [ 'oxfordshire' ],
+        MAPIT_URL => 'http://mapit.uk/',
+    }, sub {
+        $mech->log_out_ok;
+        $mech->clear_emails_ok;
+
+        $mech->get_ok('/');
+        $mech->submit_form_ok( { with_fields => { pc => 'OX20 1SZ', } },
+            "submitted postcode OK" );
+
+        # click through to the report page with "can't see map?" link
+        $mech->follow_link_ok( { text_regex => qr/skip this step/i, },
+            "follow 'skip this step' link" );
+
+        $mech->submit_form_ok(
+            {
+                button      => 'submit_register',
+                with_fields => {
+                    title         => 'Flooded Gully',
+                    detail        => 'Lots of water lying around.',
+                    photo1        => '',
+                    name          => 'Joe Bloggs',
+                    category      => 'Gullies and Catchpits',
+                    username_register => 'joe.bloggs@example.com',
+                },
+            },
+            "submitted flooded gully report OK",
+        );
+
+        my $email = $mech->get_email;
+        ok $email, "Got an email";
+        my $email_text = $mech->get_text_body_from_email($email);
+        like $email_text, qr/Please (\w+ )+confirm (\w+ )+Oxfordshire County Council/, "...and it's an Oxon CC confirmation email";
+        like $email_text, qr/The report's reference number is \d+/, "...with a numerical council ref. in the text part";
+        my $html_body = $mech->get_html_body_from_email($email);
+        my $html_body_text = HTML::TreeBuilder->new_from_content($html_body)->as_text;
+        like $html_body_text, qr/The report's reference number is \d+/, "...with a numerical council ref. in the HTML part";
+
+        $mech->clear_emails_ok;
+    };
 };
 
 done_testing();

@@ -14,6 +14,12 @@ ELSIF first_page == 'report';
   ELSE;
     title = 'Missed collection reported';
   END;
+ELSIF first_page == 'problem';
+  IF report.get_extra_metadata('grouped_ids');
+    title = 'Damaged bins reported';
+  ELSE;
+    title = 'Damaged bin reported';
+  END;
 ELSE;
     title = 'Enquiry submitted';
 END ~%]
@@ -48,7 +54,15 @@ END ~%]
 [% END %]
 
 [% IF first_page == 'request' %]
-    <p>Containers arrive typically within two weeks, but this may vary due to demand.</p>
+    [% IF report.category == 'Food bag request' %]
+      <p>Food bags will be supplied by the crew on your next collection day.</p>
+    [% ELSE %]
+      <p>
+        Bins arrive typically within two weeks, but this may vary due to demand.
+        If your bin is not received two working days before scheduled collection
+        please call 01733 747474 to discuss alternative arrangements.
+      </p>
+    [% END %]
 [% ELSIF first_page == 'report' %]
     <p>Your bin will be collected on the 2nd working day after your scheduled collection.
       Please leave your bin at the collection point.
