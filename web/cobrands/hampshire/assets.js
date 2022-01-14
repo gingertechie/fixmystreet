@@ -39,6 +39,7 @@ fixmystreet.assets.add(defaults, {
     no_asset_msg_id: '#js-not-a-road',
     non_interactive: true,
     asset_group: "Roads/Highways",
+    stylemap: fixmystreet.assets.stylemap_invisible,
     actions: {
         found: function(layer, asset) {
             fixmystreet.message_controller.road_found(layer);
@@ -55,6 +56,7 @@ fixmystreet.assets.add(defaults, {
             TYPENAME: "salt_bins"
         }
     },
+    asset_id_field: 'Asset_ID',
     asset_type: 'spot',
     asset_category: ["Salt Bin"],
     asset_item: 'salt bin'
