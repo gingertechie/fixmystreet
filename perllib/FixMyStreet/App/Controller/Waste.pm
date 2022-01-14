@@ -821,18 +821,17 @@ sub enquiry : Chained('property') : Args(0) {
     my $category = $c->get_param('category');
     my $service = $c->get_param('service_id');
     if (!$category || !$service || !$c->stash->{services}{$service}) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
+        $c->detach('property_redirect');
     }
     my ($contact) = grep { $_->category eq $category } @{$c->stash->{contacts}};
     if (!$contact) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
+        $c->detach('property_redirect');
     }
 
     my $field_list = [];
+    my $staff_form;
     foreach (@{$contact->get_metadata_for_input}) {
-        next if $_->{code} eq 'service_id' || $_->{code} eq 'uprn' || $_->{code} eq 'property_id';
+        $staff_form = 1 if $_->{code} eq 'staff_form';
         next if ($_->{automated} || '') eq 'hidden_field';
         my $type = 'Text';
         $type = 'TextArea' if 'text' eq ($_->{datatype} || '');
@@ -841,6 +840,10 @@ sub enquiry : Chained('property') : Args(0) {
             type => $type, label => $_->{description}, required => $required
         };
     }
+
+    my $staff = $c->user_exists && ($c->user->is_superuser || $c->user->from_body);
+    $c->detach('/auth/redirect') if $staff_form && !$staff;
+    $c->stash->{staff_form} = $staff_form;
 
     # If the contact has no extra fields (e.g. Peterborough) then skip to the
     # "about you" page instead of showing an empty first page.
@@ -853,7 +856,10 @@ sub enquiry : Chained('property') : Args(0) {
         enquiry => {
             fields => [ 'category', 'service_id', grep { ! ref $_ } @$field_list, 'continue' ],
             title => $category,
-            next => 'about_you',
+            next => sub {
+                return 'summary' if $staff_form;
+                return 'about_you';
+            },
             update_field_list => sub {
                 my $form = shift;
                 my $c = $form->c;
@@ -874,6 +880,11 @@ sub process_enquiry_data : Private {
     my $data = $form->saved_data;
 
     $c->cobrand->call_hook("waste_munge_enquiry_data", $data);
+
+    if ($c->stash->{staff_form}) {
+        $data->{name} = $c->user->name;
+        $data->{email} = $c->user->email;
+    }
 
     # Read extra details in loop
     foreach (grep { /^extra_/ } keys %$data) {
@@ -902,15 +913,8 @@ sub check_if_staff_can_pay : Private {
 sub garden : Chained('property') : Args(0) {
     my ($self, $c) = @_;
 
-    if ($c->stash->{waste_features}->{garden_disabled}) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
-    }
-
-    if ( $c->stash->{services}{$c->cobrand->garden_waste_service_id} ) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
-    }
+    $c->detach('property_redirect') if $c->stash->{waste_features}->{garden_disabled};
+    $c->detach('property_redirect') if $c->stash->{services}{$c->cobrand->garden_waste_service_id};
 
     my $service = $c->cobrand->garden_waste_service_id;
     $c->stash->{garden_form_data} = {
@@ -925,14 +929,8 @@ sub garden : Chained('property') : Args(0) {
 sub garden_modify : Chained('property') : Args(0) {
     my ($self, $c) = @_;
 
-    if ($c->stash->{waste_features}->{garden_disabled}) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
-    }
-
-    unless ( $c->user_exists ) {
-        $c->detach( '/auth/redirect' );
-    }
+    $c->detach('property_redirect') if $c->stash->{waste_features}->{garden_disabled};
+    $c->detach( '/auth/redirect' ) unless $c->user_exists;
 
     $c->forward('get_original_sub');
 
@@ -947,8 +945,7 @@ sub garden_modify : Chained('property') : Args(0) {
     my $max_bins = $c->stash->{quantity_max}->{$service};
     $service = $c->stash->{services}{$service};
     if (!$service || $service->{garden_due}) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
+        $c->detach('property_redirect');
     }
 
     my $payment_method = 'credit_card';
@@ -980,19 +977,9 @@ sub garden_modify : Chained('property') : Args(0) {
 sub garden_cancel : Chained('property') : Args(0) {
     my ($self, $c) = @_;
 
-    if ($c->stash->{waste_features}->{garden_disabled}) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
-    }
-
-    if ( !$c->stash->{services}{$c->cobrand->garden_waste_service_id} ) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
-    }
-
-    unless ( $c->user_exists ) {
-        $c->detach( '/auth/redirect' );
-    }
+    $c->detach('property_redirect') if $c->stash->{waste_features}->{garden_disabled};
+    $c->detach('property_redirect') if !$c->stash->{services}{$c->cobrand->garden_waste_service_id};
+    $c->detach( '/auth/redirect' ) unless $c->user_exists;
 
     $c->forward('get_original_sub');
 
@@ -1007,14 +994,8 @@ sub garden_cancel : Chained('property') : Args(0) {
 sub garden_renew : Chained('property') : Args(0) {
     my ($self, $c) = @_;
 
-    if ($c->stash->{waste_features}->{garden_disabled}) {
-        $c->res->redirect('/waste/' . $c->stash->{property}{id});
-        $c->detach;
-    }
-
-    unless ( $c->user_exists ) {
-        $c->detach( '/auth/redirect' );
-    }
+    $c->detach('property_redirect') if $c->stash->{waste_features}->{garden_disabled};
+    $c->detach( '/auth/redirect' ) unless $c->user_exists;
 
     $c->forward('get_original_sub');
 
@@ -1555,6 +1536,12 @@ sub uprn_redirect : Path('/property') : Args(1) {
     $c->detach( '/page_error_404_not_found', [] ) unless $result;
     $c->res->redirect('/waste/' . $result->{Id});
 }
+
+sub property_redirect : Private {
+    my ($self, $c) = @_;
+    $c->res->redirect('/waste/' . $c->stash->{property}{id});
+}
+
 sub label_for_field {
     my ($form, $field, $key) = @_;
     foreach ($form->field($field)->options) {
