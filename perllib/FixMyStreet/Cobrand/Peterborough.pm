@@ -426,7 +426,7 @@ sub _premises_for_postcode {
     unless ( $c->session->{$key} ) {
         my $cfg = $self->feature('bartec');
         my $bartec = Integrations::Bartec->new(%$cfg);
-        my $response = $bartec->Premises_Get($pc, BLPUClass => 'RD%');
+        my $response = $bartec->Premises_Get($pc);
 
         if (!$c->user_exists || !($c->user->from_body || $c->user->is_superuser)) {
             my $blocked = $cfg->{blocked_uprns} || [];
@@ -543,38 +543,6 @@ sub bin_services_for_address {
         "LARGE BIN" => "360L Black", # Actually would be service 422
     };
 
-    if ( my $service_id = $self->{c}->get_param('service_id') ) {
-        # category to use for lid/wheel repairds depends on the container type that's been selected
-        $self->{c}->stash->{enquiry_cat_ids} = [ 497, 'lid', 'wheels' ];
-        $self->{c}->stash->{enquiry_cats} = {
-            497 => 'Not returned to collection point',
-            'lid' => $self->{c}->stash->{containers}->{$service_id} . ' - Lid',
-            'wheels' => $self->{c}->stash->{containers}->{$service_id} . ' - Wheels',
-        };
-        $self->{c}->stash->{enquiry_verbose} = {
-            'Not returned to collection point' => 'The bin wasn’t returned to the collection point',
-            $self->{c}->stash->{containers}->{$service_id} . ' - Lid' => 'The bin’s lid is damaged',
-            $self->{c}->stash->{containers}->{$service_id} . ' - Wheels' => 'The bin’s wheels are damaged',
-        };
-        $self->{c}->stash->{enquiry_open_ids} = {
-            6533 => { # 240L Black
-                497 => 497,
-                'lid' => 538,
-                'wheels' => 541,
-            },
-            6534 => { # 240L Green
-                497 => 497,
-                'lid' => 537,
-                'wheels' => 540,
-            },
-            6579 => { # 240L Brown
-                497 => 497,
-                'lid' => 539,
-                'wheels' => 542,
-            },
-        };
-    }
-
     my %container_request_ids = (
         6533 => [ 419 ], # 240L Black
         6534 => [ 420 ], # 240L Green
@@ -605,7 +573,7 @@ sub bin_services_for_address {
 
     my %container_request_max = (
         6533 => 1, # 240L Black
-        6534 => 1, # 240L Green (max 2 per household, need to check how many property already has dynamically)
+        6534 => 1, # 240L Green
         6579 => 1, # 240L Brown
         6836 => undef, # Refuse 1100l
         6837 => undef, # Refuse 660l
@@ -646,9 +614,8 @@ sub bin_services_for_address {
         my $date = construct_bin_date($_->{EventDate})->ymd;
         my $type = $_->{EventType}{Description};
         next unless $lock_out_types{$type};
-        my $types = $premise_dates_to_lock_out{$date}{$container_id} || [];
+        my $types = $premise_dates_to_lock_out{$date}{$container_id} ||= [];
         push @$types, $type;
-        $premise_dates_to_lock_out{$date}{$container_id} = $types;
     }
     foreach (@$events_usrn) {
         my $workpack = $_->{Workpack}{Name};
@@ -900,7 +867,7 @@ sub waste_munge_request_data {
 
     $reason = {
         large_family => 'Additional black/green due to a large family',
-        cracked => 'Cracked bin',
+        cracked => "Cracked bin\n\nPlease remove cracked bin.",
         lost_stolen => 'Lost/stolen bin',
         new_build => 'New build',
         other_staff => '(Other - PD STAFF)',
@@ -909,7 +876,6 @@ sub waste_munge_request_data {
     $data->{title} = "Request new $container";
     $data->{detail} = "Quantity: $quantity\n\n$address";
     $data->{detail} .= "\n\nReason: $reason" if $reason;
-    $data->{detail} .= "\n\nPlease remove cracked bin." if $reason && $reason eq "Cracked bin";
 
     if ( $data->{extra_detail} ) {
         $data->{detail} .= "\n\nExtra detail: " . $data->{extra_detail};
@@ -1004,53 +970,6 @@ sub waste_munge_problem_data {
     }
 }
 
-sub waste_munge_enquiry_data {
-    my ($self, $data) = @_;
-    my $c = $self->{c};
-
-    my $service_id = $c->get_param('service_id');
-    my $category = $c->get_param('category');
-
-    my $verbose = $c->stash->{enquiry_verbose};
-    my $category_verbose = $verbose->{$category} || $category;
-
-    if ($service_id == 6533 && $category =~ /Lid|Wheels/) { # 240L Black repair
-        my $uprn = $c->stash->{property}->{uprn};
-        my $attributes = $self->property_attributes($uprn);
-        if ($attributes->{"LARGE BIN"}) {
-            # For large bins, we need to raise a new bin request instead
-            $service_id = "LARGE BIN";
-            $category = 'Black 360L bin';
-            $category_verbose .= ", exchange bin";
-        }
-    }
-
-    my $bin = $c->stash->{containers}{$service_id};
-    $data->{category} = $category;
-    $data->{title} = $category =~ /Lid|Wheels/ ? "Damaged $bin bin" :
-                     $category =~ /Not returned/ ? "$bin bin not returned" : $bin;
-    $data->{detail} = $category_verbose . "\n\n" . $c->stash->{property}->{address};
-
-    if ( $data->{extra_extra_detail} ) {
-        $data->{detail} .= "\n\nExtra detail: " . $data->{extra_extra_detail};
-    }
-}
-
-sub waste_munge_enquiry_form_fields {
-    my ($self, $field_list) = @_;
-
-    # ConfirmValidation enforces a maxlength of 2000 on the overall report body.
-    # Limiting the fields at this point makes it less likely the user will
-    # see a validation error several steps after entering their text, at the
-    # confirmation step.
-    my %fields = @$field_list;
-    foreach (values %fields) {
-        if ($_->{type} eq 'TextArea')  {
-            $_->{maxlength} = 1000;
-        }
-    }
-}
-
 sub waste_munge_problem_form_fields {
     my ($self, $field_list) = @_;
 
@@ -1120,7 +1039,7 @@ sub waste_munge_problem_form_fields {
         next unless $services{$id};
 
         my $categories = $services{$id};
-        foreach (keys %$categories) {
+        foreach (sort keys %$categories) {
             my $cat_name = $categories->{$_};
             push @$field_list, "service-$_" => {
                 type => 'Checkbox',

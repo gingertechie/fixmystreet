@@ -87,7 +87,6 @@ sub Authenticate {
 sub Premises_Get {
     my $self = shift;
     my $pc = shift;
-    my %params = @_;
 
     if ($self->sample_data) {
         return [
@@ -160,7 +159,7 @@ sub Premises_Get {
         ];
     }
 
-    my $res = $self->call('Premises_Get', token => $self->token, Postcode => $pc, %params);
+    my $res = $self->call('Premises_Get', token => $self->token, Postcode => $pc);
     my $som = $res->{SOM};
 
     my @premises;
