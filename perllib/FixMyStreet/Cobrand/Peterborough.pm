@@ -1039,7 +1039,7 @@ sub waste_munge_problem_form_fields {
         next unless $services{$id};
 
         my $categories = $services{$id};
-        foreach (keys %$categories) {
+        foreach (sort keys %$categories) {
             my $cat_name = $categories->{$_};
             push @$field_list, "service-$_" => {
                 type => 'Checkbox',
