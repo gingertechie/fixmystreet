@@ -746,6 +746,7 @@ sub process_problem_data : Private {
     my @reports;
     foreach (@services) {
         my ($id) = /service-(.*)/;
+        return unless $c->cobrand->can("waste_munge_problem_data");
         $c->cobrand->call_hook("waste_munge_problem_data", $id, $data);
         $c->forward('add_report', [ $data ]) or return;
         push @reports, $c->stash->{report};
