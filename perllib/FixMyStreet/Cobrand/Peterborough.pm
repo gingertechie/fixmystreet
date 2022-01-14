@@ -899,7 +899,7 @@ sub waste_munge_request_data {
 
     $reason = {
         large_family => 'Additional black/green due to a large family',
-        cracked => 'Cracked bin',
+        cracked => "Cracked bin\n\nPlease remove cracked bin.",
         lost_stolen => 'Lost/stolen bin',
         new_build => 'New build',
         other_staff => '(Other - PD STAFF)',
@@ -908,7 +908,6 @@ sub waste_munge_request_data {
     $data->{title} = "Request new $container";
     $data->{detail} = "Quantity: $quantity\n\n$address";
     $data->{detail} .= "\n\nReason: $reason" if $reason;
-    $data->{detail} .= "\n\nPlease remove cracked bin." if $reason && $reason eq "Cracked bin";
 
     if ( $data->{extra_detail} ) {
         $data->{detail} .= "\n\nExtra detail: " . $data->{extra_detail};
