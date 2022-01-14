@@ -426,7 +426,7 @@ sub _premises_for_postcode {
     unless ( $c->session->{$key} ) {
         my $cfg = $self->feature('bartec');
         my $bartec = Integrations::Bartec->new(%$cfg);
-        my $response = $bartec->Premises_Get($pc, BLPUClass => 'RD%');
+        my $response = $bartec->Premises_Get($pc);
 
         if (!$c->user_exists || !($c->user->from_body || $c->user->is_superuser)) {
             my $blocked = $cfg->{blocked_uprns} || [];
