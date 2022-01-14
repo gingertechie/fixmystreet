@@ -646,9 +646,8 @@ sub bin_services_for_address {
         my $date = construct_bin_date($_->{EventDate})->ymd;
         my $type = $_->{EventType}{Description};
         next unless $lock_out_types{$type};
-        my $types = $premise_dates_to_lock_out{$date}{$container_id} || [];
+        my $types = $premise_dates_to_lock_out{$date}{$container_id} ||= [];
         push @$types, $type;
-        $premise_dates_to_lock_out{$date}{$container_id} = $types;
     }
     foreach (@$events_usrn) {
         my $workpack = $_->{Workpack}{Name};
