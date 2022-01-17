@@ -857,10 +857,7 @@ sub enquiry : Chained('property') : Args(0) {
         enquiry => {
             fields => [ 'category', 'service_id', grep { ! ref $_ } @$field_list, 'continue' ],
             title => $category,
-            next => sub {
-                return 'summary' if $staff_form;
-                return 'about_you';
-            },
+            next => 'about_you',
             update_field_list => sub {
                 my $form = shift;
                 my $c = $form->c;
@@ -881,11 +878,6 @@ sub process_enquiry_data : Private {
     my $data = $form->saved_data;
 
     $c->cobrand->call_hook("waste_munge_enquiry_data", $data);
-
-    if ($c->stash->{staff_form}) {
-        $data->{name} = $c->user->name;
-        $data->{email} = $c->user->email;
-    }
 
     # Read extra details in loop
     foreach (grep { /^extra_/ } keys %$data) {

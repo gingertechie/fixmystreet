@@ -374,13 +374,14 @@ FixMyStreet::override_config {
     subtest 'test staff-only assisted collection form' => sub {
         $mech->get_ok('/waste/12345/enquiry?category=Assisted+collection&service_id=531');
         $mech->submit_form_ok({ with_fields => { extra_Exact_Location => 'Behind the garden gate', extra_Reason => 'Reason' } });
+        $mech->submit_form_ok({ with_fields => { name => "Anne Assist", email => 'anne@example.org' } });
         $mech->submit_form_ok({ with_fields => { process => 'summary' } });
         $mech->content_contains('Your enquiry has been submitted');
         my $report = FixMyStreet::DB->resultset("Problem")->search(undef, { order_by => { -desc => 'id' } })->first;
         is $report->get_extra_field_value('Reason'), 'Reason';
         is $report->detail, "Behind the garden gate\n\nReason\n\n2 Example Street, Bromley, BR1 1AA";
-        is $report->user->email, $staff_user->email;
-        is $report->name, $staff_user->name;
+        is $report->user->email, 'anne@example.org';
+        is $report->name, 'Anne Assist';
         is $report->get_extra_field_value('Source'), 9, 'Correct source';
     };
     subtest 'test staff-only form when logged out' => sub {
