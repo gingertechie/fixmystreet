@@ -24,6 +24,7 @@ BEGIN {
         northamptonshire
         oxfordshire
         peterborough
+        shropshire
         tfl
         westminster
     )];
