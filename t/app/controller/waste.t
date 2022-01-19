@@ -60,7 +60,7 @@ create_contact({ category => 'General enquiry', email => 'general@example.org' }
     { code => 'Notes', description => 'Notes', required => 1, datatype => 'text' },
     { code => 'Source', required => 0, automated => 'hidden_field' },
 );
-create_contact({ category => 'Assisted collection', email => 'assisted' },
+create_contact({ category => 'Assisted collection add', email => 'assisted' },
     { code => 'Exact_Location', description => 'Exact location', required => 1, datatype => 'text' },
     { code => 'Reason', description => 'Reason for request', required => 1, datatype => 'text' },
     { code => 'staff_form', automated => 'hidden_field' },
@@ -372,7 +372,7 @@ FixMyStreet::override_config {
         is $staff_user->name, $original_name, 'Staff user name stayed the same';
     };
     subtest 'test staff-only assisted collection form' => sub {
-        $mech->get_ok('/waste/12345/enquiry?category=Assisted+collection&service_id=531');
+        $mech->get_ok('/waste/12345/enquiry?category=Assisted+collection+add&service_id=531');
         $mech->submit_form_ok({ with_fields => { extra_Exact_Location => 'Behind the garden gate', extra_Reason => 'Reason' } });
         $mech->submit_form_ok({ with_fields => { name => "Anne Assist", email => 'anne@example.org' } });
         $mech->submit_form_ok({ with_fields => { process => 'summary' } });

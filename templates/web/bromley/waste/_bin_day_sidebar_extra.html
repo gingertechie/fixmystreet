@@ -3,8 +3,9 @@
     <ul>
     [% IF assisted_collection %]
         <li>This property is set up for assisted collections.</li>
+        <li><a href="[% c.uri_for_action('waste/enquiry', [ property.id ]) %]?category=Assisted+collection+remove&amp;service_id=531">Remove assisted collection</a></li>
     [% ELSIF domestic_collection %]
-        <li><a href="[% c.uri_for_action('waste/enquiry', [ property.id ]) %]?category=Assisted+collection&amp;service_id=531">Set up for assisted collection</a></li>
+        <li><a href="[% c.uri_for_action('waste/enquiry', [ property.id ]) %]?category=Assisted+collection+add&amp;service_id=531">Set up for assisted collection</a></li>
     [% END %]
     </ul>
 [% END %]
