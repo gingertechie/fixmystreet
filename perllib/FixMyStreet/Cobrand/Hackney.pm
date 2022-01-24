@@ -238,28 +238,8 @@ sub munge_report_new_contacts {
     $self->SUPER::munge_report_new_contacts($contacts);
 }
 
-# Translate email address to actual delivery address
-sub noise_destination_email {
-    my ($self, $row, $name) = @_;
-    my $emails = $self->feature('open311_email');
-    my $where = $row->get_extra_metadata('where');
-    if (my $recipient = $emails->{"noise_$where"}) {
-        my @emails = split(/,/, $recipient);
-        return [ map { [ $_, $name ] } @emails ];
-    }
-}
-
 sub munge_sendreport_params {
     my ($self, $row, $h, $params) = @_;
-
-    if ($row->cobrand_data eq 'noise') {
-        my $name = $params->{To}[0][1];
-        if (my $recipient = $self->noise_destination_email($row, $name)) {
-            $params->{To} = $recipient;
-        }
-        $params->{Subject} = "Noise report: " . $row->title;
-        return;
-    }
 
     my $split_match = $row->get_extra_metadata('split_match') or return;
     $row->unset_extra_metadata('split_match');
@@ -297,13 +277,6 @@ sub validate_contact_email {
     return unless @emails;
     return 1 if is_valid_email_list(join(",", @emails));
 }
-
-# We want to send confirmation emails only for Noise reports
-sub report_sent_confirmation_email {
-    my ($self, $report) = @_;
-    return 'id' if $report->cobrand_data eq 'noise';
-    return '';
-};
 
 sub dashboard_export_problems_add_columns {
     my ($self, $csv) = @_;
@@ -347,6 +320,7 @@ sub update_email_shortlisted_user {
     my $cobrand = FixMyStreet::Cobrand::Hackney->new; # $self may be FMS
     return if $update->problem->cobrand_data eq 'noise' || !$update->problem->to_body_named('Hackney');
     my $sent_to = $update->problem->get_extra_metadata('sent_to') || [];
+
     if (@$sent_to) {
         my @to = map { [ $_, $cobrand->council_name ] } @$sent_to;
         $c->send_email('alert-update.txt', {
