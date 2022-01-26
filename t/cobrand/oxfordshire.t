@@ -411,7 +411,6 @@ subtest "Sends FMS report ID in confirmation emails when user is logged in." => 
         FixMyStreet::Script::Reports::send();
 
         my $email = $mech->get_email; # tests that there's precisely 1 email in queue
-        my $email_subject = $mech->get_text_body_from_email($email);
         my $email_text = $mech->get_text_body_from_email($email);
         like $email_text, qr/Your report to Oxfordshire County Council has been logged/, "A confirmation email has been received from Oxfordshire CC";
         like $email_text, qr/The report's reference number is \d+\./, "...with a numerical case ref. in the text part...";
