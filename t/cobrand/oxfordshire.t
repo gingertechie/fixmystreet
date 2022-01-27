@@ -12,6 +12,7 @@ my $oxon = $mech->create_body_ok(2237, 'Oxfordshire County Council');
 my $counciluser = $mech->create_user_ok('counciluser@example.com', name => 'Council User', from_body => $oxon);
 
 my $oxfordshire_cobrand = Test::MockModule->new('FixMyStreet::Cobrand::Oxfordshire');
+$oxfordshire_cobrand->mock('area_types', sub { [ 'CTY' ] });
 
 $oxfordshire_cobrand->mock('defect_wfs_query', sub {
     return {
@@ -372,16 +373,18 @@ FixMyStreet::override_config {
 
 };
 
-subtest "sends FMS report ID in confirmation emails" => sub {
+subtest "Sends FMS report ID in confirmation emails when user is logged in." => sub {
     FixMyStreet::override_config {
-        ALLOWED_COBRANDS => [ 'oxfordshire' ],
+        ALLOWED_COBRANDS => [ 'oxfordshire', 'fixmystreet' ],
+        STAGING_FLAGS => { send_reports => 1 },
         MAPIT_URL => 'http://mapit.uk/',
     }, sub {
-        $mech->log_out_ok;
         $mech->clear_emails_ok;
 
+        my $user = $mech->create_user_ok( 'user@example.com', name => 'Test User' );
+        $mech->log_in_ok( $user->email );
         $mech->get_ok('/');
-        $mech->submit_form_ok( { with_fields => { pc => 'OX20 1SZ', } },
+        $mech->submit_form_ok( { with_fields => { pc => 'OX20 1SZ'  } }, #'OX28 4DS','SN6 8AE'
             "submitted postcode OK" );
 
         # click through to the report page with "can't see map?" link
@@ -392,25 +395,28 @@ subtest "sends FMS report ID in confirmation emails" => sub {
             {
                 button      => 'submit_register',
                 with_fields => {
-                    title         => 'Flooded Gully',
+                    title         => 'Flooded Gully in Oxfordshire',
                     detail        => 'Lots of water lying around.',
                     photo1        => '',
-                    name          => 'Joe Bloggs',
                     category      => 'Gullies and Catchpits',
-                    username_register => 'joe.bloggs@example.com',
                 },
             },
             "submitted flooded gully report OK",
         );
 
-        my $email = $mech->get_email;
-        ok $email, "Got an email";
+        my $report = FixMyStreet::DB->resultset("Problem")->find({ title => 'Flooded Gully in Oxfordshire'});
+        $mech->get_ok("/report/" . $report->id);
+        ok $report, "found the report: " . $report->title;
+
+        FixMyStreet::Script::Reports::send();
+
+        my $email = $mech->get_email; # tests that there's precisely 1 email in queue
         my $email_text = $mech->get_text_body_from_email($email);
-        like $email_text, qr/Please (\w+ )+confirm (\w+ )+Oxfordshire County Council/, "...and it's an Oxon CC confirmation email";
-        like $email_text, qr/The report's reference number is \d+/, "...with a numerical council ref. in the text part";
+        like $email_text, qr/Your report to Oxfordshire County Council has been logged/, "A confirmation email has been received from Oxfordshire CC";
+        like $email_text, qr/The report's reference number is \d+\./, "...with a numerical case ref. in the text part...";
         my $html_body = $mech->get_html_body_from_email($email);
         my $html_body_text = HTML::TreeBuilder->new_from_content($html_body)->as_text;
-        like $html_body_text, qr/The report's reference number is \d+/, "...with a numerical council ref. in the HTML part";
+        like $html_body_text, qr/The report's reference number is \d+/, "...and a numerical case ref. in the HTML part";
 
         $mech->clear_emails_ok;
     };
