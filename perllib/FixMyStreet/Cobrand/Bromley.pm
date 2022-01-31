@@ -749,13 +749,12 @@ sub bin_services_for_address {
     my $result = $self->{api_serviceunits};
     return [] unless @$result;
 
-    my $events = $self->{api_events};
-    my $open = $self->_parse_open_events($events);
-    $self->{c}->stash->{open_service_requests} = $open->{enquiry};
+    my $events = $self->_parse_events($self->{api_events});
+    $self->{c}->stash->{open_service_requests} = $events->{enquiry};
 
     # If there is an open Garden subscription (2106) event, assume
     # that means a bin is being delivered and so a pending subscription
-    $self->{c}->stash->{pending_subscription} = $open->{enquiry}{2106} ? { title => 'Garden Subscription' } : undef;
+    $self->{c}->stash->{pending_subscription} = $events->{enquiry}{2106} ? { title => 'Garden Subscription' } : undef;
 
     my @to_fetch;
     my %schedules;
@@ -778,19 +777,17 @@ sub bin_services_for_address {
     my @out;
     my %task_ref_to_row;
     foreach (@$result) {
+        my $service_id = $_->{ServiceId};
         my $service_name = service_name_override($_);
         next unless $schedules{$_->{Id}} || ( $service_name eq 'Garden Waste' && $expired{$_->{Id}} );
 
         my $schedules = $schedules{$_->{Id}} || $expired{$_->{Id}};
         my $servicetask = _get_current_service_task($_);
 
-        my $events = $calls->{"GetEventsForObject ServiceUnit $_->{Id}"};
-        my $open_unit = $self->_parse_open_events($events);
+        my $containers = $service_to_containers{$service_id};
+        my ($open_request) = grep { $_ } map { $events->{request}->{$_} } @$containers;
 
-        my $containers = $service_to_containers{$_->{ServiceId}};
-        my ($open_request) = grep { $_ } map { $open->{request}->{$_} } @$containers;
-
-        my $request_max = $quantity_max{$_->{ServiceId}};
+        my $request_max = $quantity_max{$service_id};
 
         my $garden = 0;
         my $garden_bins;
@@ -823,15 +820,14 @@ sub bin_services_for_address {
 
         my $row = {
             id => $_->{Id},
-            service_id => $_->{ServiceId},
+            service_id => $service_id,
             service_name => $service_name,
             garden_waste => $garden,
             garden_bins => $garden_bins,
             garden_cost => $garden_cost,
             garden_due => $garden_due,
             garden_overdue => $garden_overdue,
-            report_open => $open->{missed}->{$_->{ServiceId}} || $open_unit->{missed}->{$_->{ServiceId}},
-            request_allowed => $request_allowed{$_->{ServiceId}} && $request_max && $schedules->{next},
+            request_allowed => $request_allowed{$service_id} && $request_max && $schedules->{next},
             request_open => $open_request,
             request_containers => $containers,
             request_max => $request_max,
@@ -846,6 +842,16 @@ sub bin_services_for_address {
         if ($row->{last}) {
             my $ref = join(',', @{$row->{last}{ref}});
             $task_ref_to_row{$ref} = $row;
+
+            $row->{report_allowed} = within_working_days($row->{last}{date}, 2);
+
+            my $events_unit = $self->_parse_events($calls->{"GetEventsForObject ServiceUnit $_->{Id}"});
+            my $missed_events = [
+                @{$events->{missed}->{$service_id} || []},
+                @{$events_unit->{missed}->{$service_id} || []},
+            ];
+            my $recent_events = $self->_events_since_date($row->{last}{date}, $missed_events);
+            $row->{report_open} = $recent_events->{open} || $recent_events->{closed};
         }
         push @out, $row;
     }
@@ -879,7 +885,6 @@ sub bin_services_for_address {
             $row->{last}{state} = $state unless $state eq 'Completed' || $state eq 'Not Completed' || $state eq 'Outstanding' || $state eq 'Allocated';
             $row->{last}{completed} = $completed;
             $row->{last}{resolution} = $resolution;
-            $row->{report_allowed} = within_working_days($row->{last}{date}, 2);
 
             # Special handling if last instance is today
             if ($row->{last}{date}->ymd eq $now->ymd) {
@@ -929,16 +934,28 @@ sub _get_current_service_task {
     return $current;
 }
 
-sub _parse_open_events {
+sub _closed_event {
+    my $event = shift;
+    return 1 if $event->{ResolvedDate};
+    return 1 if $event->{ResolutionCodeId} && $event->{ResolutionCodeId} != 584; # Out of Stock
+    return 0;
+}
+
+sub _parse_events {
     my $self = shift;
-    my $events = shift;
-    my $open;
-    foreach (@$events) {
-        next if $_->{ResolvedDate};
-        next if $_->{ResolutionCodeId} && $_->{ResolutionCodeId} != 584; # Out of Stock
+    my $events_data = shift;
+    my $events;
+    foreach (@$events_data) {
         my $event_type = $_->{EventTypeId};
-        my $service_id = $_->{ServiceId};
-        if ($event_type == 2104) { # Request
+        my $type = 'enquiry';
+        $type = 'request' if $event_type == 2104;
+        $type = 'missed' if 2095 <= $event_type && $event_type <= 2103;
+
+        # Only care about open requests/enquiries
+        my $closed = _closed_event($_);
+        next if $type ne 'missed' && $closed;
+
+        if ($type eq 'request') {
             my $data = $_->{Data} ? $_->{Data}{ExtensibleDatum} : [];
             my $container;
             DATA: foreach (@$data) {
@@ -952,15 +969,32 @@ sub _parse_open_events {
                 }
             }
             my $report = $self->problems->search({ external_id => $_->{Guid} })->first;
-            $open->{request}->{$container} = $report ? { report => $report } : 1;
-        } elsif (2095 <= $event_type && $event_type <= 2103) { # Missed collection
+            $events->{request}->{$container} = $report ? { report => $report } : 1;
+        } elsif ($type eq 'missed') {
             my $report = $self->problems->search({ external_id => $_->{Guid} })->first;
-            $open->{missed}->{$service_id} = $report ? { report => $report } : 1;
+            my $service_id = $_->{ServiceId};
+            my $data = {
+                closed => $closed,
+                date => construct_bin_date($_->{EventDate}),
+            };
+            $data->{report} = $report if $report;
+            push @{$events->{missed}->{$service_id}}, $data;
         } else { # General enquiry of some sort
-            $open->{enquiry}->{$event_type} = 1;
+            $events->{enquiry}->{$event_type} = 1;
         }
     }
-    return $open;
+    return $events;
+}
+
+sub _events_since_date {
+    my ($self, $last_date, $events) = @_;
+    @$events = grep { $_->{date} >= $last_date } @$events;
+    my @closed = grep { $_->{closed} } @$events;
+    my @open = grep { !$_->{closed} } @$events;
+    return {
+        @open ? (open => \@open) : (),
+        @closed ? (closed => \@closed) : (),
+    };
 }
 
 sub _schedule_object {
