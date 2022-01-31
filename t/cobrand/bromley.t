@@ -592,7 +592,7 @@ FixMyStreet::override_config {
     };
 
     subtest 'test reporting with an existing closed event' => sub {
-		my $echo = Test::MockModule->new('Integrations::Echo');
+        my $echo = Test::MockModule->new('Integrations::Echo');
         $echo->mock('GetEventsForObject', sub { [
             {
                 ServiceId => '542',

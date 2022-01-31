@@ -988,12 +988,12 @@ sub _parse_events {
 
 sub _events_since_date {
     my ($self, $last_date, $events) = @_;
-    @$events = grep { $_->{date} >= $last_date } @$events;
-    my @closed = grep { $_->{closed} } @$events;
-    my @open = grep { !$_->{closed} } @$events;
+    my @since_events = grep { $_->{date} >= $last_date } @$events;
+    my @closed = grep { $_->{closed} } @since_events;
+    my @open = grep { !$_->{closed} } @since_events;
     return {
-        @open ? (open => \@open) : (),
-        @closed ? (closed => \@closed) : (),
+        @open ? (open => $open[0]) : (),
+        @closed ? (closed => $closed[0]) : (),
     };
 }
 
