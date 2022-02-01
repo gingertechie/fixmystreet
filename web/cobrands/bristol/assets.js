@@ -26,18 +26,56 @@ var options = {
     }
 };
 
+// This is required so that the found/not found actions are fired on category
+// select and pin move rather than just on asset select/not select.
+OpenLayers.Layer.BristolVectorAsset = OpenLayers.Class(OpenLayers.Layer.VectorAsset, {
+    initialize: function(name, options) {
+        OpenLayers.Layer.VectorAsset.prototype.initialize.apply(this, arguments);
+        $(fixmystreet).on('maps:update_pin', this.checkSelected.bind(this));
+        $(fixmystreet).on('report_new:category_change', this.checkSelected.bind(this));
+    },
+
+    CLASS_NAME: 'OpenLayers.Layer.PeterboroughVectorAsset'
+});
+
+var parkOptions = $.extend(true, {}, options, {
+    filter_key: '',
+    wfs_url: 'https://tilma.staging.mysociety.org/mapserver/bristol',
+    wfs_feature: "parks",
+    propertyNames: [ ].push( 'SITE_CODE', 'SITE_NAME'),
+    asset_type: 'area',
+    asset_id_field: 'SITE_CODE',
+    srsName: "EPSG:3857",
+    class: OpenLayers.Layer.BristolVectorAsset,
+    strategy_class: OpenLayers.Strategy.FixMyStreet,
+    select_action: true,
+    actions: {
+        asset_found: function(asset) {
+            fixmystreet.message_controller.asset_found.call(this);
+        },
+        asset_not_found: function(layer, asset) {
+            fixmystreet.message_controller.asset_not_found.call(this);
+        }
+    }
+});
+
+
+
+fixmystreet.assets.add(parkOptions, {
+    asset_group: "Parks Maintenance",
+    asset_item: 'park',
+});
+
+fixmystreet.assets.add(parkOptions, {
+    asset_category: "Path Cleaning",
+});
+
 fixmystreet.assets.add(options, {
     filter_key: '',
     wfs_feature: "COD_ASSETS_AREA",
     asset_type: 'area',
     asset_category: "Bridges/Subways",
     asset_item: 'bridge/subway'
-});
-
-fixmystreet.assets.add(options, {
-    asset_category: "Gully/Drainage",
-    asset_item: 'gully',
-    filter_value: 'GULLY'
 });
 
 fixmystreet.assets.add(options, {
@@ -82,6 +120,30 @@ fixmystreet.assets.add(options, {
     asset_group: "Bus Stops",
     asset_item: 'bus stop',
     filter_value: ['PT01', 'PT02', 'PT03']
+});
+
+fixmystreet.assets.add(options, {
+    asset_category: "Flooding/Gully/Drainage",
+    asset_item: 'gully or drain',
+    filter_value: ['GULLY', 'FR02', 'FR03', 'FR07', 'FR18', 'FR10', 'FR16', 'FR14', 'FR13', 'FR06', 'FR09', 'FR12', 'FR15', 'FR08', 'FR11', 'FR20', 'FR19']
+});
+
+fixmystreet.assets.add(options, {
+    asset_group: "Trees",
+    asset_item: 'tree',
+    filter_value: 'TR'
+});
+
+fixmystreet.assets.add(options, {
+    asset_category: ["Bin Full", "Bin/Seat Damage"],
+    asset_item: 'bin',
+    filter_value: 'PF'
+});
+
+fixmystreet.assets.add(options, {
+    asset_category: "Noticeboard/Signs",
+    asset_item: 'sign',
+    filter_value: 'PS'
 });
 
 })();
