@@ -221,7 +221,7 @@ var bin_defaults = $.extend(true, {}, arcgis_defaults, {
 fixmystreet.assets.add(bin_defaults, {
     http_options: {
       params: {
-        TYPENAME: 'LitterBins'
+        where: "Type='Litter Bin'"
       }
     },
     asset_category: 'Litter bin',
@@ -231,7 +231,7 @@ fixmystreet.assets.add(bin_defaults, {
 fixmystreet.assets.add(bin_defaults, {
     http_options: {
       params: {
-        TYPENAME: 'DogBins'
+        where: "Type='Dog Waste Bin'"
       }
     },
     asset_category: 'Dog bin',
