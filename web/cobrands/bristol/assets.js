@@ -121,7 +121,7 @@ fixmystreet.assets.add(options, {
 fixmystreet.assets.add(options, {
     asset_category: "Flooding/Gully/Drainage",
     asset_item: 'gully or drain',
-    filter_value: ['GULLY', 'FR02', 'FR03', 'FR07', 'FR18', 'FR10', 'FR16', 'FR14', 'FR13', 'FR06', 'FR09', 'FR12', 'FR15', 'FR08', 'FR11', 'FR20', 'FR19']
+    filter_value: ['GULLY', 'FR02', 'FR03', 'FR07', 'FR18', 'FR10', 'FR16', 'FR14', 'FR13', 'FR06', 'FR09', 'FR12', 'FR15', 'FR08', 'FR11', 'FR20', 'FR19', 'FR05']
 });
 
 fixmystreet.assets.add(options, {
