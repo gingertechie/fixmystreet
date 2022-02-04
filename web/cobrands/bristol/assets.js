@@ -10,7 +10,7 @@ var base_options = {
 	'fixmystreet': 4.777314267158508
     },
     body: "Bristol City Council",
-    geometryName: 'SHAPE'
+    geometryName: 'SHAPE',
 }
 
 
