@@ -11,8 +11,7 @@ var base_options = {
     },
     body: "Bristol City Council",
     geometryName: 'SHAPE',
-}
-
+};
 
 // Assets are served from two different WFS feeds; one for lighting and one
 // for everything else. They have some options in common:
