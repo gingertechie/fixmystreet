@@ -4,45 +4,47 @@ if (!fixmystreet.maps) {
     return;
 }
 
+var base_options = {
+    max_resolution: {
+	'bristol': 0.33072982812632296,
+	'fixmystreet': 4.777314267158508
+    },
+    body: "Bristol City Council",
+    geometryName: 'SHAPE'
+}
+
+
 // Assets are served from two different WFS feeds; one for lighting and one
 // for everything else. They have some options in common:
-var options = {
-    max_resolution: {
-        'bristol': 0.33072982812632296,
-        'fixmystreet': 4.777314267158508
-    },
+var options = $.extend(true, {}, base_options, {
     asset_type: 'spot',
-    body: "Bristol City Council",
     srsName: "EPSG:27700",
-    geometryName: 'SHAPE',
     wfs_url: "https://maps.bristol.gov.uk/arcgis/services/ext/FixMyStreetSupportData/MapServer/WFSServer",
     wfs_feature: "COD_ASSETS_POINT",
     asset_id_field: 'COD_ASSET_ID',
     propertyNames: [ 'COD_ASSET_ID', 'COD_USRN', 'SHAPE' ],
     filter_key: 'COD_ASSET_TYPE',
     attributes: {
-        asset_id: 'COD_ASSET_ID',
-        usrn: 'COD_USRN'
+	asset_id: 'COD_ASSET_ID',
+	usrn: 'COD_USRN'
     }
-};
+});
 
 // This is required so that the found/not found actions are fired on category
 // select and pin move rather than just on asset select/not select.
 OpenLayers.Layer.BristolVectorAsset = OpenLayers.Class(OpenLayers.Layer.VectorAsset, {
     initialize: function(name, options) {
-        OpenLayers.Layer.VectorAsset.prototype.initialize.apply(this, arguments);
-        $(fixmystreet).on('maps:update_pin', this.checkSelected.bind(this));
-        $(fixmystreet).on('report_new:category_change', this.checkSelected.bind(this));
+	OpenLayers.Layer.VectorAsset.prototype.initialize.apply(this, arguments);
+	$(fixmystreet).on('maps:update_pin', this.checkSelected.bind(this));
+	$(fixmystreet).on('report_new:category_change', this.checkSelected.bind(this));
     },
 
     CLASS_NAME: 'OpenLayers.Layer.BristolVectorAsset'
 });
 
-var parkOptions = $.extend(true, {}, options, {
-    filter_key: '',
+var parkOptions = $.extend(true, {}, base_options, {
     wfs_url: 'https://tilma.staging.mysociety.org/mapserver/bristol',
     wfs_feature: "parks",
-    propertyNames: [ ].push( 'SITE_CODE', 'SITE_NAME'),
     asset_type: 'area',
     asset_id_field: 'SITE_CODE',
     srsName: "EPSG:3857",
@@ -50,8 +52,8 @@ var parkOptions = $.extend(true, {}, options, {
     strategy_class: OpenLayers.Strategy.FixMyStreet,
     select_action: true,
     actions: {
-        asset_found: fixmystreet.message_controller.asset_found,
-        asset_not_found: fixmystreet.message_controller.asset_not_found
+	asset_found: fixmystreet.message_controller.asset_found,
+	asset_not_found: fixmystreet.message_controller.asset_not_found
     }
 });
 
