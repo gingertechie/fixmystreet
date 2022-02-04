@@ -35,7 +35,7 @@ OpenLayers.Layer.BristolVectorAsset = OpenLayers.Class(OpenLayers.Layer.VectorAs
         $(fixmystreet).on('report_new:category_change', this.checkSelected.bind(this));
     },
 
-    CLASS_NAME: 'OpenLayers.Layer.PeterboroughVectorAsset'
+    CLASS_NAME: 'OpenLayers.Layer.BristolVectorAsset'
 });
 
 var parkOptions = $.extend(true, {}, options, {
@@ -50,24 +50,14 @@ var parkOptions = $.extend(true, {}, options, {
     strategy_class: OpenLayers.Strategy.FixMyStreet,
     select_action: true,
     actions: {
-        asset_found: function(asset) {
-            fixmystreet.message_controller.asset_found.call(this);
-        },
-        asset_not_found: function(layer, asset) {
-            fixmystreet.message_controller.asset_not_found.call(this);
-        }
+        asset_found: fixmystreet.message_controller.asset_found,
+        asset_not_found: fixmystreet.message_controller.asset_not_found
     }
 });
 
-
-
 fixmystreet.assets.add(parkOptions, {
-    asset_group: "Parks Maintenance",
+    asset_category: ["General Litter", "Graffiti Removal", "Flyposter Removal", "Grass Cutting", "Path Cleaning", "Hedge Cutting", "Vegetation Clearance", "Shrub/Roses", "Pothole/Trip Hazard", "Toilet Issue/Damage", "Building Damage/Repair", "Wall/Fence/Gate Damage", "Lighting (Park Facilities)", "Abandoned Vehicles", "Shrub/Rose Maintenance"],
     asset_item: 'park',
-});
-
-fixmystreet.assets.add(parkOptions, {
-    asset_category: "Path Cleaning",
 });
 
 fixmystreet.assets.add(options, {
