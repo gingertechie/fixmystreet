@@ -2,12 +2,14 @@
 
 * Unreleased
     - Front end improvements:
+        - Skip map link on /around is now always visible below big green banner #3788.
         - Highlight pin on sidebar focus as well as hover.
         - Map page pagination links now styled as links rather than buttons. #3727
         - Include username in inactive email.
     - Bugfixes:
         - Add ID attributes to change password form inputs.
         - Fix link deactivation for privacy policy link on privacy policy page. #3704
+        - Make map pan/zoom controls keyboard-accessible. #3751
     - Admin improvements:
         - Admin 'add user' form now always creates staff users
     - Development improvements:

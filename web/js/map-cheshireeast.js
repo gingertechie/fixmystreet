@@ -1,6 +1,6 @@
 fixmystreet.maps.config = function() {
     fixmystreet.controls = [
-        new OpenLayers.Control.Attribution(),
+        new OpenLayers.Control.AttributionFMS(),
         new OpenLayers.Control.ArgParserFMS(),
         new OpenLayers.Control.Navigation(),
         new OpenLayers.Control.PermalinkFMS('map'),
@@ -15,6 +15,7 @@ fixmystreet.maps.config = function() {
 
 OpenLayers.Layer.CheshireEast = OpenLayers.Class(OpenLayers.Layer.XYZ, {
     url: 'https://maps-cache.cheshiresharedservices.gov.uk/maps/?wmts/CE_OS_AllBasemaps_COLOUR/oscce_grid/${z}/${x}/${y}.jpeg&KEY=3a3f5c60eca1404ea114e6941c9d3895',
+    attribution: "© Crown Copyright and database right 2022. Ordnance Survey 100049045",
 
     initialize: function(name, options) {
         options = OpenLayers.Util.extend({

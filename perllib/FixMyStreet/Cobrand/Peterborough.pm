@@ -489,6 +489,8 @@ sub look_up_property {
 
     my %premises = map { $_->{uprn} => $_ } @$premises;
 
+    my $attributes = $self->property_attributes($uprn);
+    $premises{$uprn}{attributes} = $attributes;
     return $premises{$uprn};
 }
 
@@ -558,10 +560,10 @@ sub bin_services_for_address {
         # small food caddy?
     );
 
-    my %container_removal_ids = (
-        6533 => [ 487 ], # 240L Black
-        6534 => [ 488 ], # 240L Green
-        6579 => [ 489 ], # 240L Brown
+    my %container_service_ids = (
+        6533 => 255, # 240L Black
+        6534 => 254, # 240L Green
+        6579 => 253, # 240L Brown
         6836 => undef, # Refuse 1100l
         6837 => undef, # Refuse 660l
         6839 => undef, # Refuse 240l
@@ -646,10 +648,10 @@ sub bin_services_for_address {
         next if $seen_containers{$container_id};
         $seen_containers{$container_id} = 1;
 
-        my $report_service_ids = $container_removal_ids{$container_id};
-        my @report_service_ids_open = grep { $open_requests->{$_} } @$report_service_ids;
+        my $report_service_id = $container_service_ids{$container_id};
+        my @report_service_ids_open = grep { $open_requests->{$_} } $report_service_id;
         my $request_service_ids = $container_request_ids{$container_id};
-        my @request_service_ids_open = grep { $open_requests->{$_} } @$request_service_ids;
+        my @request_service_ids_open = grep { $open_requests->{$_} || ($_ == 419 && $open_requests->{422}) } @$request_service_ids;
 
         my $row = {
             id => $_->{JobID},
@@ -815,8 +817,7 @@ sub waste_munge_request_form_data {
 sub waste_munge_report_form_data {
     my ($self, $data) = @_;
 
-    my $uprn = $self->{c}->stash->{property}->{uprn};
-    my $attributes = $self->property_attributes($uprn);
+    my $attributes = $self->{c}->stash->{property}->{attributes};
 
     if ( $attributes->{"ASSISTED COLLECTION"} ) {
         # For assisted collections we just raise a single "missed assisted collection"
@@ -905,8 +906,7 @@ sub waste_munge_report_data {
     my $service_id = $container_service_ids{$id};
 
     if ($service_id == 255) {
-        my $uprn = $c->stash->{property}->{uprn};
-        my $attributes = $self->property_attributes($uprn);
+        my $attributes = $c->stash->{property}->{attributes};
         if ($attributes->{"LARGE BIN"}) {
             # For large bins, we need different text to show
             $id = "LARGE BIN";
@@ -942,8 +942,7 @@ sub waste_munge_problem_data {
     my $category_verbose = $service_details->{label};
 
     if ($container_id == 6533 && $category =~ /Lid|Wheels/) { # 240L Black repair
-        my $uprn = $c->stash->{property}->{uprn};
-        my $attributes = $self->property_attributes($uprn);
+        my $attributes = $c->stash->{property}->{attributes};
         if ($attributes->{"LARGE BIN"}) {
             # For large bins, we need to raise a new bin request instead
             $container_id = "LARGE BIN";
@@ -1041,11 +1040,12 @@ sub waste_munge_problem_form_fields {
         my $categories = $services{$id};
         foreach (sort keys %$categories) {
             my $cat_name = $categories->{$_};
+            my $disabled = $open_requests->{$_} || ($open_requests->{422} && $id == 6533);
             push @$field_list, "service-$_" => {
                 type => 'Checkbox',
                 label => $name,
                 option_label => $cat_name,
-                $open_requests->{$_} ? ( disabled => 1 ) : (),
+                disabled => $disabled,
             };
 
             # Set this to empty so the heading isn't shown multiple times
