@@ -26,22 +26,23 @@ sub query {
         state => [ FixMyStreet::DB::Result::Problem->open_states() ],
     });
 }
-
 sub update_options {
     my $params = shift;
     if ( $params ) {
         $opts = {
-            %$opts,
-            %$params,
+          %$opts,
+          %$params,
         };
-        $opts->{show_emails} && ( $opts->{commit} = 0 );
+    }
+
+    if ($opts->{'show-emails'}) {
+        $opts->{show_emails} = $opts->{'show-emails'};
     }
 }
 
 sub archive {
     my $params = shift;
     update_options($params);
-
     unless ( $opts->{commit} ) {
         printf "Doing a dry run; emails won't be sent and reports won't be closed.\n";
         printf "Re-run with --commit to actually archive reports.\n\n";
@@ -49,7 +50,7 @@ sub archive {
 
     if ($opts->{show_emails}) {
         if ($opts->{reports} || $opts->{commit}) {
-            die "Aborting: the show_emails flag was specified. Run without --show_emails to close reports.\n";
+            die "Aborting: the show_emails flag was specified with --commit or --reports. Run without --show_emails to close reports.\n";
         }
     }
 
@@ -150,7 +151,7 @@ sub close_with_emails {
 
     printf("%d users will receive closure emails about %d reports which will be closed.\n", $user_count, $problem_count);
 
-    if ( $opts->{commit} ) {
+    if ( $opts->{commit} || $opts->{show_emails} ) {
         my $i = 0;
         while ( my $user = $users->next ) {
             printf("%d/%d: User ID %d\n", ++$i, $user_count, $user->id);
@@ -216,10 +217,12 @@ sub send_email_and_close {
         printf("done.\n    Closing reports: ");
         close_problems($problems);
         printf("done.\n");
-    } elsif ( $opts->{show_emails} ) {
-        printf("Dry run. Not closing reports for this user.\n")
-    } else {
-        printf("error! Not closing reports for this user.\n")
+    } else { # test: emails went to std. output
+        if ( $opts->{show_emails} ) {
+            printf("done.\n");
+        } else { # genuine error
+            printf("error! Not closing reports for this user.\n$email_error")
+        }
     }
 }
 
@@ -266,6 +269,5 @@ sub close_problems {
                 parameter => $comment->id,
             } );
         }
-
     }
 }
