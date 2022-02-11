@@ -21,7 +21,7 @@ highways_style.addRules([rule_motorway, rule_a_road]);
 var highways_stylemap = new OpenLayers.StyleMap({ 'default': highways_style });
 
 var defaults = {
-    wfs_url: "https://tilma.mysociety.org/mapserver/highways",
+    wfs_url: "https://tilma.staging.mysociety.org/mapserver/highways",
     // this covers zoomed right out on Cumbrian sections of the M6
     max_resolution: 40,
     min_resolution: 0.0001,
@@ -79,6 +79,43 @@ fixmystreet.assets.add(defaults, {
           fixmystreet.message_controller.road_not_found(layer);
           $('#js-top-message').hide();
           $('.js-reporting-page--category').addClass('hidden-js');
+        }
+    }
+});
+
+fixmystreet.assets.add(defaults, {
+    wfs_feature: "Highways_litter_pick",
+    stylemap: highways_stylemap,
+    always_visible: true,
+    non_interactive: true,
+    road: true,
+    nearest_radius: 50,
+    asset_type: 'road',
+    no_asset_msg_id: '#js-not-he-road',
+    no_asset_msgs_class: '.js-roads-he',
+    all_categories: true,
+    actions: {
+        found: function(layer, feature) {
+            if ( $("#js-dbfo-road").is(":hidden") && ( !$('.js-mobile-not-an-asset').length || $('.js-mobile-not-an-asset').is(':hidden')) ) {
+                fixmystreet.message_controller.road_found(layer, feature, function(feature) {
+                    $('#js-top-message').show();
+                    $('.js-reporting-page--category').removeClass('hidden-js');
+                    return true;
+                });
+            }
+        },
+        not_found: function(layer) {
+            if (fixmystreet.assets.layers[0].selected_feature) {
+                var road_number = fixmystreet.assets.layers[0].selected_feature.attributes.ROA_NUMBER;
+                if ( $('#js-not-he-road').is(':hidden') && ( !$('.js-mobile-not-an-asset').length || $('.js-mobile-not-an-asset').is(':hidden')) ) {
+                    var category = fixmystreet.reporting.selectedCategory().category;
+                    if ((category === 'Flytipping (NH)' || category === 'Litter (NH)') && (road_number && !road_number.match(/^(M|A\d+M)/)) ) {
+                        fixmystreet.message_controller.road_not_found(layer);
+                        $('#js-top-message').hide();
+                        $('.js-reporting-page--category').addClass('hidden-js');
+                    }
+                }
+            }
         }
     }
 });
