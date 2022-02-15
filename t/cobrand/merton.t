@@ -235,7 +235,7 @@ FixMyStreet::override_config {
 
         my ($report) = $mech->create_problems_for_body(1, $merton->id, 'Test report', {
             category => 'Litter', cobrand => 'merton',
-            latitude => 51.400975, longitude => -0.19655, areas => '2500',
+            latitude => 51.40097, longitude => -0.19655, areas => '2500',
         });
 
         FixMyStreet::Script::Reports::send();
