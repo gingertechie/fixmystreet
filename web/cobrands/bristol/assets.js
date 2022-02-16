@@ -57,7 +57,7 @@ var parkOptions = $.extend(true, {}, base_options, {
 });
 
 fixmystreet.assets.add(parkOptions, {
-    asset_category: ["General Litter", "Graffiti Removal", "Flyposter Removal", "Grass Cutting", "Path Cleaning", "Hedge Cutting", "Vegetation Clearance", "Shrub/Roses", "Pothole/Trip Hazard", "Toilet Issue/Damage", "Building Damage/Repair", "Wall/Fence/Gate Damage", "Lighting (Park Facilities)", "Abandoned Vehicles", "Shrub/Rose Maintenance"],
+    asset_category: ["General litter", "Graffiti.", "Flyposter removal", "Grass cutting", "Path cleaning", "Hedge cutting", "Vegetation clearance", "Shrub/Roses", "Pothole/trip hazard", "Toilet issue/damage", "Building damage/repair", "Wall/Fence/Gate Damage", "Lighting (park facilities)", "Abandoned vehicles.", "Shrub/rose maintenance"],
     asset_item: 'park',
 });
 
