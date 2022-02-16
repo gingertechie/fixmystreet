@@ -5,6 +5,7 @@ use utf8;
 use strict;
 use warnings;
 use Integrations::Bartec;
+use List::Util qw(any);
 use Sort::Key::Natural qw(natkeysort_inplace);
 use FixMyStreet::WorkingDays;
 use Utils;
@@ -152,7 +153,7 @@ sub get_body_sender {
         my $features = $self->_fetch_features(
             {
                 type => 'arcgis',
-                url => 'https://peterborough.assets/2/query?',
+                url => 'https://peterborough.assets/4/query?',
                 buffer => 1,
             },
             $x,
@@ -651,7 +652,8 @@ sub bin_services_for_address {
         my $report_service_id = $container_service_ids{$container_id};
         my @report_service_ids_open = grep { $open_requests->{$_} } $report_service_id;
         my $request_service_ids = $container_request_ids{$container_id};
-        my @request_service_ids_open = grep { $open_requests->{$_} || ($_ == 419 && $open_requests->{422}) } @$request_service_ids;
+        # Open request for same thing, or for all bins, or for large black bin
+        my @request_service_ids_open = grep { $open_requests->{$_} || $open_requests->{425} || ($_ == 419 && $open_requests->{422}) } @$request_service_ids;
 
         my $row = {
             id => $_->{JobID},
@@ -686,6 +688,8 @@ sub bin_services_for_address {
                 my $is_staff = $self->{c}->user_exists && $self->{c}->user->from_body && $self->{c}->user->from_body->name eq "Peterborough City Council";
                 $row->{report_allowed} = $is_staff ? 1 : 0;
                 $row->{report_locked_out} = [ "ON DAY PRE 5PM" ];
+                # Set a global flag to show things in the sidebar
+                $self->{c}->stash->{on_day_pre_5pm} = 1;
             }
             # But if it has been marked as locked out, show that
             if (my $types = $premise_dates_to_lock_out{$last->ymd}{$container_id}) {
@@ -716,7 +720,7 @@ sub bin_services_for_address {
     if ($bags_only) {
         push(@food_containers, 428) unless $open_requests->{428};
     } else {
-        unless ( $open_requests->{493} ) { # Both food bins
+        unless ( $open_requests->{493} || $open_requests->{425} ) { # Both food bins, or all bins
             push(@food_containers, 424) unless $open_requests->{424}; # Large food caddy
             push(@food_containers, 423) unless $open_requests->{423}; # Small food caddy
         }
@@ -731,10 +735,12 @@ sub bin_services_for_address {
         request_allowed => 1,
         request_max => 1,
         request_only => 1,
-        report_only => 1,
+        report_only => !$open_requests->{252}, # Can report if no open report
     }) if @food_containers;
 
-    unless ( $bags_only || $open_requests->{425} ) {
+    # All bins, black bin, green bin, large black bin, small food caddy, large food caddy, both food bins
+    my $any_open_bin_request = any { $open_requests->{$_} } (425, 419, 420, 422, 423, 424, 493);
+    unless ( $bags_only || $any_open_bin_request ) {
         # We want this one to always appear first
         unshift @out, {
             id => "_ALL_BINS",
@@ -1047,10 +1053,17 @@ sub waste_munge_problem_form_fields {
 
         next unless $services{$id};
 
+        # Don't allow any problem reports on a bin if a new one is currently
+        # requested. Check for large bin requests for black bins as well
+        # 419/420 are new black/green bin requests, 422 is large black bin request
+        # 6533/6534 are black/green containers
+        my $black_bin_request = (($open_requests->{419} || $open_requests->{422}) && $id == 6533);
+        my $green_bin_request = ($open_requests->{420} && $id == 6534);
+
         my $categories = $services{$id};
         foreach (sort keys %$categories) {
             my $cat_name = $categories->{$_};
-            my $disabled = $open_requests->{$_} || ($open_requests->{422} && $id == 6533);
+            my $disabled = $open_requests->{$_} || $black_bin_request || $green_bin_request;
             push @$field_list, "service-$_" => {
                 type => 'Checkbox',
                 label => $name,
@@ -1066,6 +1079,7 @@ sub waste_munge_problem_form_fields {
         type => 'Checkbox',
         label => $self->{c}->stash->{services_problems}->{497}->{container_name},
         option_label => $self->{c}->stash->{services_problems}->{497}->{label},
+        disabled => $open_requests->{497},
     };
     push @$field_list, "extra_detail" => {
         type => 'Text',
