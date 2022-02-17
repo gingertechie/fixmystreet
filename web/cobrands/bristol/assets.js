@@ -132,13 +132,13 @@ fixmystreet.assets.add(options, {
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: ["Bin Full", "Bin/Seat Damage"],
+    asset_category: ["Bin full", "Bin/seat damage"],
     asset_item: 'bin',
     filter_value: 'PF'
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: "Noticeboard/Signs",
+    asset_category: "Noticeboard/signs",
     asset_item: 'sign',
     filter_value: 'PS'
 });
