@@ -85,21 +85,26 @@ $db->txn_do(sub {
                 category => $contact->{category},
             });
 
+            my $new_contact;
+
             if ($contact_rs->count > 0) {
-                print "Existing contact found...skipping\n";
-                next;
+                print "Updating contact $contact->{category} for $parish->{name}...";
+
+                $new_contact = $contact_rs->first;
+                $new_contact->email($parish->{email});
+            } else {
+                print "Creating contact $contact->{category} for $parish->{name}...";
+
+                $new_contact = $contact_rs->create_with_note(
+                    "created automatically by script",
+                    basename($0),
+                    {
+                        email => $parish->{email},
+                        state => 'confirmed',
+                    }
+                );
             }
 
-            print "Creating category $contact->{category} for $parish->{name}...";
-
-            my $new_contact = $contact_rs->create_with_note(
-                "created automatically by script",
-                basename($0),
-                {
-                    email => $parish->{email},
-                    state => 'confirmed',
-                }
-            );
 
             if ($contact->{extra_metadata}) {
                 $new_contact->set_extra_metadata(%{$contact->{extra_metadata}});
