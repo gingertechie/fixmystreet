@@ -21,6 +21,7 @@
         - Ability to pass custom arguments (eg: SSL config) to server when running via Docker
         - Allow bin/fetch start/end times to be fractional.
         - Add an --exclude option to bin/fetch.
+        - Upgrade Net::DNS to deal with IPv6 issues.
     - Open311 improvements:
         - Increase default timeout.
 
