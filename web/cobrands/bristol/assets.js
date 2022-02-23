@@ -10,7 +10,7 @@ var base_options = {
 	'fixmystreet': 4.777314267158508
     },
     body: "Bristol City Council",
-    geometryName: 'SHAPE',
+    geometryName: 'SHAPE'
 };
 
 // Assets are served from two different WFS feeds; one for lighting and one
@@ -57,8 +57,21 @@ var parkOptions = $.extend(true, {}, base_options, {
 });
 
 fixmystreet.assets.add(parkOptions, {
-    asset_category: ["General litter", "Graffiti.", "Flyposter removal", "Grass cutting", "Path cleaning", "Hedge cutting", "Vegetation clearance", "Shrub/Roses", "Pothole/trip hazard", "Toilet issue/damage", "Building damage/repair", "Wall/Fence/Gate Damage", "Lighting (park facilities)", "Abandoned vehicles.", "Shrub/rose maintenance"],
-    asset_item: 'park',
+    asset_category: ["Abandoned vehicle in park/open space",
+                     "General litter",
+                     "Graffiti issue",
+                     "Flyposter removal",
+                     "Grass cutting",
+                     "Path cleaning",
+                     "Hedge cutting",
+                     "Vegetation clearance",
+                     "Pothole/trip hazard",
+                     "Toilet issue/damage",
+                     "Building damage/repair",
+                     "Wall/Fence/Gate Damage",
+                     "Lighting (park facilities)",
+                     "Shrub/rose maintenance"],
+    asset_item: 'park'
 });
 
 fixmystreet.assets.add(options, {
@@ -76,33 +89,31 @@ fixmystreet.assets.add(options, {
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: "Grit Bins",
+    asset_category: "Grit bins",
     asset_item: 'grit bin',
     filter_value: 'GRITBIN'
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: "Street Light",
+    asset_category: "Street light",
     asset_item: 'street light',
     filter_value: [ 'S070', 'S080', 'S100', 'S110', 'S120', 'S170', 'S220', 'S230' ]
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: "Zebra Crossing Light",
+    asset_category: "Zebra crossing light",
     asset_item: 'light',
     filter_value: 'S260'
 });
 
-// NB there's a typo in BCC's ‘Iluminated Bollard’ category so this
-// includes the correct spelling just in case they fix it.
 fixmystreet.assets.add(options, {
-    asset_category: [ "Iluminated Bollard", "Illuminated Bollard" ],
+    asset_category: [ "Illuminated bollard" ],
     asset_item: 'bollard',
     filter_value: 'S020'
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: "Illuminated Sign",
+    asset_category: "Illuminated sign",
     asset_item: 'sign',
     filter_value: 'S180'
 });
@@ -114,7 +125,7 @@ fixmystreet.assets.add(options, {
 });
 
 fixmystreet.assets.add(options, {
-    asset_group: "Bus Stops",
+    asset_group: "Bus stops",
     asset_item: 'bus stop',
     filter_value: ['PT01', 'PT02', 'PT03']
 });
