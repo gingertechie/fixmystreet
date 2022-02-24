@@ -128,11 +128,45 @@ As well as installing dependencies, this script compiles our CSS (using
 `bin/make_css`), installs the database schema (using `bin/update-schema`),
 and compiles any translation `.mo` files (using `commonlib/bin/gettext-makemo`).
 
+#### macOS troubleshooting
+
+Some Perl modules may fail to install without certain packages and paths in place.
+
+**Image::PNG::QRCode** requires the `libpng` package.
+
+For any **SSL-related modules**, make sure `openssl` is installed. If using homebrew:
+
+    $ brew install --cask openssl
+
+Then you may need to create symlinks to folders Perl modules will recognise:
+
+    $ sudo mkdir /usr/local/lib
+
+    $ sudo ln -s /opt/homebrew/opt/openssl@1.1/lib/libssl.1.1.dylib /usr/local/lib/libssl.dylib
+
+    $ sudo ln -s /opt/homebrew/opt/openssl@1.1/lib/libcrypto.1.1.dylib /usr/local/lib/libcrypto.dylib
+
+You may also need to set one or more of the following env variables:
+
+    export OPENSSL_PREFIX=/opt/homebrew/opt/openssl@1.1
+
+    export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@1.1/lib/pkgconfig"
+
+    export LDFLAGS="-L/opt/homebrew/opt/openssl@1.1/lib"
+
+    export CPPFLAGS="-I/opt/homebrew/opt/openssl@1.1/include"
+
+For **Locale::gettext** you may need to set one or more of the following (in addition to installing the `gettext` package):
+
+    export CPATH=/opt/homebrew/include
+
+    export LIBRARY_PATH=/opt/homebrew/lib
+
 ### 5. Set up config
 
 The settings for FixMyStreet are defined in `conf/general.yml` using the YAML
 markup language. There are some defaults in `conf/general.yml-example` which
-you should copy to `conf/general.yml`; note that if you are using the Vagrant 
+you should copy to `conf/general.yml`; note that if you are using the Vagrant
 environment, a simple `conf/general.yml` file should already have been
 configured for you.
 
