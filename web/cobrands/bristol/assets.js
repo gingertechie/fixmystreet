@@ -65,12 +65,12 @@ fixmystreet.assets.add(parkOptions, {
                      "Path cleaning",
                      "Hedge cutting",
                      "Vegetation clearance",
-                     "Pothole/trip hazard",
+                     "Pothole/Trip hazard",
                      "Toilet issue/damage",
-                     "Building damage/repair",
-                     "Wall/Fence/Gate Damage",
+                     "Building damage",
+                     "Wall/Fence/Gate damage",
                      "Lighting (park facilities)",
-                     "Shrub/rose maintenance"],
+                     "Shrub/Rose maintenance"],
     asset_item: 'park'
 });
 
@@ -143,13 +143,13 @@ fixmystreet.assets.add(options, {
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: ["Bin full", "Bin/seat damage"],
+    asset_category: ["Bin full", "Bin/Seat damage"],
     asset_item: 'bin',
     filter_value: 'PF'
 });
 
 fixmystreet.assets.add(options, {
-    asset_category: "Noticeboard/signs",
+    asset_category: "Noticeboard/Signs",
     asset_item: 'sign',
     filter_value: 'PS'
 });
