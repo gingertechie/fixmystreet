@@ -4,3 +4,10 @@
 
 @import "../sass/base";
 
+#site-logo {
+  @include svg-background-image("/cobrands/fixmyride/images/fixmyride-logo");
+  // background: url("/cobrands/greenwich/images/greenwich-logo.svg") 0 50% no-repeat;
+  background-size: 175px 35px;
+  width: 180px;
+  height: 45px;
+}
