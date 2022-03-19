@@ -2,6 +2,7 @@
 
 * Unreleased
     - Front end improvements:
+        - Enable keyboard navigation of map. #3321
         - Highlight pin on sidebar focus as well as hover.
         - Map page pagination links now styled as links rather than buttons. #3727
         - Include username in inactive email.
@@ -23,6 +24,7 @@
         - Allow bin/fetch start/end times to be fractional.
         - Add an --exclude option to bin/fetch.
         - Add an index on problem(external_id) to speed up bin/fetch --updates
+        - Upgrade Net::DNS to deal with IPv6 issues.
     - Open311 improvements:
         - Increase default timeout.
 
